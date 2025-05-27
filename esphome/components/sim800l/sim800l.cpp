@@ -408,9 +408,18 @@ void Sim800LComponent::parse_cmd_(std::string message) {
       }
       this->state_ = STATE_INIT;
       break;
-    default:
-      ESP_LOGW(TAG, "Unhandled: %s - %d", message.c_str(), this->state_);
+    default: {
+      bool message_available = message.compare(0, 6, "+CMGL:") == 0;
+      if (message_available) {
+        send_cmd_("AT+CMGDA=\"DEL ALL\"");
+        this->state_ = STATE_INIT;
+        this->expect_ack_ = true;
+      }
+      else {
+        ESP_LOGW(TAG, "Unhandled: %s - %d", message.c_str(), this->state_);
+      }
       break;
+    }
   }
 }  // namespace sim800l
 
