@@ -64,6 +64,8 @@ void Sim800LComponent::send_cmd_(const std::string &message) {
   this->write_str(message.c_str());
   this->write_byte(ASCII_CR);
   this->write_byte(ASCII_LF);
+
+  this->flush();
 }
 
 void Sim800LComponent::parse_cmd_(std::string message) {
@@ -436,8 +438,10 @@ void Sim800LComponent::loop() {
 
     if (byte == ASCII_CR)
       continue;
+
     if (byte >= 0x7F)
       byte = '?';  // need to be valid utf8 string for log functions.
+
     this->read_buffer_[this->read_pos_] = byte;
 
     if (this->state_ == STATE_SENDING_SMS_2 && this->read_pos_ == 0 && byte == '>')
@@ -446,6 +450,7 @@ void Sim800LComponent::loop() {
     if (this->read_buffer_[this->read_pos_] == ASCII_LF) {
       this->read_buffer_[this->read_pos_] = 0;
       this->read_pos_ = 0;
+
       this->parse_cmd_(this->read_buffer_);
     } else {
       this->read_pos_++;
@@ -454,6 +459,7 @@ void Sim800LComponent::loop() {
   if (state_ == STATE_INIT && this->registered_ &&
       (this->call_state_ != 6  // A call is in progress
        || this->send_pending_ || this->dial_pending_ || this->connect_pending_ || this->disconnect_pending_)) {
+ 
     this->update();
   }
 }
